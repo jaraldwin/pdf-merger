@@ -90,8 +90,13 @@ export async function POST(request: Request) {
         "Content-Disposition": "attachment; filename=merged.pdf",
       },
     });
-  } catch (error: any) {
-    console.error("❌ Error merging PDFs:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error("Error merging PDFs:", error);
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Failed to merge PDFs",
+      },
+      { status: 500 }
+    );
   }
 }

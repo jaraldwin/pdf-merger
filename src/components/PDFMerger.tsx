@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import logo from "../assets/logo.png";
 
@@ -13,7 +13,22 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
   const [mergedUrl, setMergedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [compression, setCompression] = useState("screen");
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // 👇 Fetch visitor count
+  useEffect(() => {
+    const fetchVisitorCount = async () => {
+      try {
+        const res = await fetch("/api/log");
+        const data = await res.json();
+        setVisitorCount(data.count);
+      } catch (err) {
+        console.error("Failed to load visitor count", err);
+      }
+    };
+    fetchVisitorCount();
+  }, []);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = Array.from(event.target.files || []);
@@ -66,32 +81,41 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
       }`}
     >
       {/* Header */}
-      <div className="flex flex-col items-center text-center mb-6">
+      <div className="flex flex-col items-center mb-6 text-center">
         <Image
           src={logo}
           alt="Logo"
           width={64}
           height={64}
-          className="rounded-full mb-2"
+          className="mb-2 rounded-full"
         />
-        <h1 className="text-3xl font-bold mb-1">PDF Merger Tool</h1>
+        <h1 className="mb-1 text-3xl font-bold">PDF Merger Tool</h1>
         <p
           className={`text-sm leading-relaxed ${
             darkMode ? "text-gray-400" : "text-gray-600"
           } max-w-md`}
         >
           A lightweight PDF merging and compression tool for{" "}
-          <strong>DOST-MIRDC</strong>, developed by{" "}
-          <strong>PMD-MIS</strong>.  
+          <strong>DOST-MIRDC</strong>, developed by <strong>PMD-MIS</strong>.
           <br />
           This tool does <strong>not store</strong> or use your data — it runs
           entirely on your local system with <strong>no database</strong>.
         </p>
+        {/* 👇 Visitor counter */}
+        {visitorCount !== null && (
+          <p
+            className={`mt-3 text-xs font-medium ${
+              darkMode ? "text-gray-500" : "text-gray-500"
+            }`}
+          >
+            👥 Total Visitors: {visitorCount.toLocaleString()}
+          </p>
+        )}
       </div>
 
       {/* File Input */}
       <div className="mb-4">
-        <label className="block font-medium mb-2">
+        <label className="block mb-2 font-medium">
           Select PDF files to merge
         </label>
         <input
@@ -110,7 +134,7 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
 
       {/* Compression Selector */}
       <div className="mb-6">
-        <label className="block font-medium mb-2">Compression Level</label>
+        <label className="block mb-2 font-medium">Compression Level</label>
         <select
           value={compression}
           onChange={(e) => setCompression(e.target.value)}
@@ -150,7 +174,7 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
         <button
           onClick={handleMerge}
           disabled={loading}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium transition disabled:opacity-50"
+          className="px-5 py-2 font-medium text-white transition bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? "Merging..." : "Merge PDFs"}
         </button>
