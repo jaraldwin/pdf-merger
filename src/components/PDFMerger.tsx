@@ -89,17 +89,19 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
           height={64}
           className="mb-2 rounded-full"
         />
-        <h1 className="mb-1 text-3xl font-bold">PDF Merger Tool</h1>
+        <h1 className="mb-1 text-3xl font-bold">DOST-MIRDC PDF Tool</h1>
         <p
           className={`text-sm leading-relaxed ${
             darkMode ? "text-gray-400" : "text-gray-600"
           } max-w-md`}
         >
-          A lightweight PDF merging and compression tool for{" "}
-          <strong>DOST-MIRDC</strong>, developed by <strong>PMD-MIS</strong>.
+          A web-based PDF merging and compression tool developed by{" "}
+          <strong>PMD-MIS</strong>, for <strong>DOST-MIRDC</strong>.
           <br />
-          This tool does <strong>not store</strong> or use your data — it runs
-          entirely on your local system with <strong>no database</strong>.
+          The files are safe because this tool{" "}
+          <strong>
+            runs entirely on your computer and does not store or send any data.
+          </strong>
         </p>
         {/* 👇 Visitor counter */}
         {visitorCount !== null && (
