@@ -11,12 +11,9 @@ export async function middleware(request: NextRequest) {
   const ip = forwardedFor?.split(",")[0]?.trim() || "Unknown IP";
   const url = request.nextUrl.pathname;
 
-  // Detect base URL correctly
-  const host = request.headers.get("host") || "localhost:3000";
-  const protocol = process.env.NODE_ENV === "production" ? "http" : "http"; 
-  // 👆 Use HTTP even in production since Nginx terminates SSL
-
-  const apiUrl = `${protocol}://${host}/api/log`;
+  // ✅ Use environment variable for flexibility
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const apiUrl = `${baseUrl}/api/log`;
 
   try {
     await fetch(apiUrl, {
