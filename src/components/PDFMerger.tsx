@@ -90,19 +90,22 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
           className="mb-2"
         />
         <h1 className="mb-1 text-3xl font-bold">DOST-MIRDC PDF Tool</h1>
+
         <p
           className={`text-sm leading-relaxed ${
             darkMode ? "text-gray-400" : "text-gray-600"
           } max-w-md`}
         >
-          A web-based PDF merging and compression tool developed by{" "}
-          <strong>PMD-MIS</strong>, for <strong>DOST-MIRDC</strong>.
+          A web-based <strong>PDF merging and compression</strong> tool
+          developed by <strong className="whitespace-nowrap">PMD-MIS</strong>{" "}
+          for <strong>DOST-MIRDC</strong>.
           <br />
-          The files are safe because this tool{" "}
-          <strong>
-            runs entirely on your computer and does not store or send any data.
-          </strong>
+          <br />
+          Your files are <strong>completely secure</strong> — this tool{" "}
+          <strong>runs entirely on your computer</strong> and{" "}
+          <strong>never uploads, stores, or sends any data</strong> elsewhere.
         </p>
+
         {/* 👇 Visitor counter */}
         {visitorCount !== null && (
           <p
@@ -110,7 +113,8 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
               darkMode ? "text-gray-500" : "text-gray-500"
             }`}
           >
-            👥 Total Visitors: {visitorCount.toLocaleString()}
+            👥 <span className="font-semibold">Total Visitors:</span>{" "}
+            {visitorCount.toLocaleString()}
           </p>
         )}
       </div>
