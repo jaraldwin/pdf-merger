@@ -7,13 +7,20 @@ export const config = {
 };
 
 export async function middleware(request: NextRequest) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const ip = forwardedFor?.split(",")[0]?.trim() || "Unknown IP";
+  const ip =
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "Unknown IP";
+
   const url = request.nextUrl.pathname;
 
-  // ✅ Use environment variable for flexibility
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const apiUrl = `${baseUrl}/api/log`;
+  const protocol = "http";
+  const host =
+    process.env.INTERNAL_HOST ||
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    "localhost:3000";
+
+  const apiUrl = `${protocol}://${host}/api/log`;
 
   try {
     await fetch(apiUrl, {
