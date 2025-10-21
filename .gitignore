@@ -11,7 +11,8 @@
 !.yarn/versions
 
 # logs
-/logs
+logs/
+*.log
 
 # testing
 /coverage

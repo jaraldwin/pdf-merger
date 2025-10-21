@@ -84,10 +84,10 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
       <div className="flex flex-col items-center mb-6 text-center">
         <Image
           src={logo}
-          alt="Logo"
+          alt="MIRDC-Logo"
           width={64}
           height={64}
-          className="mb-2 rounded-full"
+          className="mb-2"
         />
         <h1 className="mb-1 text-3xl font-bold">DOST-MIRDC PDF Tool</h1>
         <p
