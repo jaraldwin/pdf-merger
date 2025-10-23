@@ -1,87 +1,115 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-// ❌ Removed: import Image from "next/image";
-// ❌ Removed: import logo from "../assets/logo.png";
-// ❌ Removed: import { useEffect } from "react";
+import { jsPDF } from "jspdf";
 
-interface PDFMergerProps {
+interface ImagePDFToolsProps {
   darkMode: boolean;
 }
 
-export default function PDFMerger({ darkMode }: PDFMergerProps) {
-  const [files, setFiles] = useState<File[]>([]);
-  const [mergedUrl, setMergedUrl] = useState<string | null>(null);
+export default function ImagePDFTools({ darkMode }: ImagePDFToolsProps) {
+  const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [compression, setCompression] = useState("screen");
   const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
-  // ❌ Removed: [visitorCount, setVisitorCount] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // ❌ Removed: useEffect to fetch visitor count
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = Array.from(event.target.files || []);
-    setFiles((prev) => [...prev, ...newFiles]);
+    setImages((prev) => [...prev, ...newFiles]);
   };
 
-  const handleMerge = async () => {
-    if (files.length === 0) {
-      alert("Please select at least one PDF file.");
+  const handleClear = () => {
+    setImages([]);
+    setPdfUrl(null);
+    setCompressionInfo(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleConvert = async () => {
+    if (images.length === 0) {
+      alert("Please select one or more images first.");
       return;
     }
+
     setLoading(true);
-    setCompressionInfo(null); // reset info
-
     try {
-      // Calculate total original file size
-      const totalOriginalSize =
-        files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024); // MB
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "pt",
+        format: "a4",
+      });
 
+      for (let i = 0; i < images.length; i++) {
+        const file = images[i];
+        const imageUrl = URL.createObjectURL(file);
+
+        const img = new Image();
+        img.src = imageUrl;
+
+        await new Promise<void>((resolve) => {
+          img.onload = () => {
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            // Maintain aspect ratio
+            let imgWidth = img.width;
+            let imgHeight = img.height;
+            const ratio = Math.min(
+              pageWidth / imgWidth,
+              pageHeight / imgHeight
+            );
+
+            imgWidth *= ratio;
+            imgHeight *= ratio;
+
+            const x = (pageWidth - imgWidth) / 2;
+            const y = (pageHeight - imgHeight) / 2;
+
+            pdf.addImage(img, "JPEG", x, y, imgWidth, imgHeight);
+
+            if (i < images.length - 1) pdf.addPage();
+
+            URL.revokeObjectURL(imageUrl);
+            resolve();
+          };
+        });
+      }
+
+      const pdfBlob = pdf.output("blob");
+
+      // Compress PDF using Ghostscript API
       const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
+      formData.append("file", pdfBlob, "images.pdf");
       formData.append("compression", compression);
 
-      const response = await fetch("/api/merge", {
+      const res = await fetch("/api/compress", {
         method: "POST",
         body: formData,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Merge failed");
-      }
+      if (!res.ok) throw new Error("Compression failed");
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      setMergedUrl(url);
+      const compressedBlob = await res.blob();
+      const originalSize = pdfBlob.size / 1024 / 1024;
+      const compressedSize = compressedBlob.size / 1024 / 1024;
+      const reduction = ((1 - compressedSize / originalSize) * 100).toFixed(1);
 
-      // Calculate compressed file size
-      const compressedSize = blob.size / (1024 * 1024); // MB
-      const reduction = (
-        (1 - compressedSize / totalOriginalSize) *
-        100
-      ).toFixed(1);
-
-      // Display compression summary
       setCompressionInfo(
-        `Reduced from ${totalOriginalSize.toFixed(
+        `Reduced from ${originalSize.toFixed(2)} MB → ${compressedSize.toFixed(
           2
-        )} MB → ${compressedSize.toFixed(2)} MB (${reduction}% smaller)`
+        )} MB (${reduction}% smaller)`
       );
-    } catch (error) {
-      console.error("Error merging PDFs:", error);
-      alert("Something went wrong while merging PDFs.");
+
+      const pdfBlobUrl = URL.createObjectURL(compressedBlob);
+      setPdfUrl(pdfBlobUrl);
+    } catch (err) {
+      console.error("Error creating/compressing PDF:", err);
+      alert("Something went wrong during conversion or compression.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleClear = () => {
-    setFiles([]);
-    setMergedUrl(null);
-    setCompressionInfo(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -92,8 +120,9 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
           : "bg-white text-gray-900 border border-gray-200"
       }`}
     >
+      {/* 🛑 REMOVED DUPLICATE HEADER */}
 
-      {/* Upload Section */}
+      {/* File Input */}
       <div
         className={`p-5 rounded-xl border-2 border-dashed mb-6 transition hover:border-blue-500 ${
           darkMode
@@ -102,14 +131,14 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
         }`}
       >
         <label className="block mb-3 font-medium text-center">
-          Select PDF Files to Merge
+          Select Image Files to Convert to PDF
         </label>
         <input
           ref={fileInputRef}
           type="file"
-          accept="application/pdf"
+          accept="image/*"
           multiple
-          onChange={handleFileSelect}
+          onChange={handleSelect}
           className="block mx-auto text-sm cursor-pointer"
         />
         <p
@@ -117,13 +146,13 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
             darkMode ? "text-gray-400" : "text-gray-500"
           }`}
         >
-          You can select multiple files
+          You can select multiple images (JPG, PNG, etc.)
         </p>
       </div>
 
-      {/* Compression Level */}
+      {/* Compression Level Selector */}
       <div className="mb-6">
-        <label className="block mb-2 font-medium">Compression Quality</label>
+        <label className="block mb-2 font-medium">Compression Level</label>
         <select
           value={compression}
           onChange={(e) => setCompression(e.target.value)}
@@ -141,8 +170,8 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
         </select>
       </div>
 
-      {/* File List */}
-      {files.length > 0 && (
+      {/* File List for Images */}
+      {images.length > 0 && (
         <div
           className={`rounded-xl p-4 mb-6 border ${
             darkMode
@@ -150,11 +179,9 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
               : "bg-gray-50 border-gray-200 text-gray-700"
           }`}
         >
-          <h3 className="mb-2 font-semibold">
-            📂 Selected Files ({files.length})
-          </h3>
+          <h3 className="mb-2 font-semibold">🖼️ Selected Images</h3>
           <ul className="space-y-1 overflow-y-auto text-sm max-h-48">
-            {files.map((file, i) => (
+            {images.map((file, i) => (
               <li key={i} className="truncate">
                 • {file.name}
               </li>
@@ -163,22 +190,22 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
         </div>
       )}
 
-      {/* Action Buttons */}
+      {/* Buttons */}
       <div className="flex flex-col justify-center gap-4 sm:flex-row">
         <button
-          onClick={handleMerge}
-          disabled={loading || files.length === 0}
+          onClick={handleConvert}
+          disabled={loading}
           className={`px-6 py-2.5 rounded-lg font-medium text-white transition-all ${
-            loading || files.length === 0
+            loading
               ? "bg-blue-400 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700 shadow-md"
           }`}
         >
-          {loading ? "🔄 Merging..." : "🚀 Merge PDFs"}
+          {loading ? "🔄 Processing..." : "🚀 Convert & Compress"}
         </button>
+
         <button
           onClick={handleClear}
-          disabled={loading && files.length === 0}
           className={`px-6 py-2.5 rounded-lg font-medium transition ${
             darkMode
               ? "bg-gray-700 hover:bg-gray-600 text-gray-100"
@@ -189,37 +216,35 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
         </button>
       </div>
 
-      {/* Compression Result Info */}
-      {compressionInfo && (
-        <p
-          className={`mt-6 text-sm text-center font-medium ${
-            darkMode ? "text-green-400" : "text-green-700"
-          }`}
-        >
-          📉 {compressionInfo}
-        </p>
-      )}
-
-      {/* Merged Preview */}
-      {mergedUrl && (
-        <div className="mt-6 text-center animate-fade-in">
+      {/* PDF Preview */}
+      {pdfUrl && (
+        <div className="mt-8 text-center animate-fade-in">
+          {compressionInfo && (
+            <p
+              className={`text-sm mb-2 ${
+                darkMode ? "text-green-400" : "text-green-700"
+              } font-medium`}
+            >
+              📉 {compressionInfo}
+            </p>
+          )}
           <a
-            href={mergedUrl}
-            download="merged_compressed.pdf"
+            href={pdfUrl}
+            download="compressed.pdf"
             className={`inline-block font-medium underline mb-4 ${
               darkMode
                 ? "text-blue-400 hover:text-blue-300"
                 : "text-blue-600 hover:text-blue-800"
             }`}
           >
-            ⬇️ Download merged_compressed.pdf
+            ⬇️ Download compressed.pdf
           </a>
           <iframe
-            src={mergedUrl}
+            src={pdfUrl}
             className={`w-full h-96 rounded-lg border ${
               darkMode ? "border-gray-700" : "border-gray-300"
             }`}
-            title="Merged PDF Preview"
+            title="Generated PDF Preview"
           />
         </div>
       )}

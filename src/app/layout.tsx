@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PDF-Merger",
-  description: "A lightweight PDF merging and compression tool for DOST-MIRDC",
+  title: "PDF Toolkit",
+  description: "A secure, offline-ready suite for PDF management — including merging, compression, image-to-PDF conversion, page splitting, and page reordering. Developed by PMD-MIS for DOST-MIRDC.",
 };
 
 export default function RootLayout({
