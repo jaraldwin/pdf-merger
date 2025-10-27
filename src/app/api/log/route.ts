@@ -1,9 +1,8 @@
-// app/api/log/route.ts
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-export const runtime = "nodejs"; // ✅ Required for fs
+export const runtime = "nodejs";
 
 const logsDir = path.join(process.cwd(), "logs");
 const logFilePath = path.join(logsDir, "access.log");
@@ -40,13 +39,32 @@ function cleanupOldLogs() {
 
 export async function POST(req: Request) {
   try {
-    const { ip, url } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const headers = Object.fromEntries(req.headers.entries());
+
+    const ip =
+      body.ip ||
+      headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      headers["cf-connecting-ip"] ||
+      "Unknown IP";
+
+    const url = body.url || "Unknown URL";
+    const referrer = body.referrer || headers["referer"] || "No Referrer";
+    const userAgent = body.userAgent || headers["user-agent"] || "Unknown Agent";
+
     rotateLogsIfNeeded();
     cleanupOldLogs();
 
-    const logEntry = `[${new Date().toISOString()}] IP: ${ip} visited ${url}\n`;
+    const logEntry = `[${new Date().toISOString()}]
+IP: ${ip}
+Visited: ${url}
+Referrer: ${referrer}
+User-Agent: ${userAgent}
+----------------------------------------\n`;
+
     fs.appendFileSync(logFilePath, logEntry);
 
+    // Count total visits
     let count = 0;
     if (fs.existsSync(counterFilePath)) {
       const data = JSON.parse(fs.readFileSync(counterFilePath, "utf-8"));

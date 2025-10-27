@@ -1,4 +1,3 @@
-// lib/src/middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -8,33 +7,41 @@ export const config = {
 };
 
 export async function middleware(request: NextRequest) {
-  // Extract IP safely from known headers
+  // --- IP Detection ---
   const ip =
-    request.headers.get("x-real-ip") || // Nginx / reverse proxy
-    request.headers.get("cf-connecting-ip") || // Cloudflare
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("cf-connecting-ip") ||
+    (request as unknown as { ip?: string }).ip ||
     "Unknown IP";
 
-  const url = request.nextUrl.pathname;
+  // --- Browser Headers ---
+  const referrer = request.headers.get("referer") || "Direct / No Referrer";
+  const userAgent = request.headers.get("user-agent") || "Unknown Agent";
+  const url = request.url;
 
-  const protocol =
-    process.env.NODE_ENV === "production" ? "https" : "http";
-
-  const host =
-    process.env.INTERNAL_HOST ||
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    "localhost:3000";
+  // --- Environment Setup ---
+  const isLocal = process.env.NODE_ENV !== "production";
+  const protocol = isLocal ? "http" : "https";
+  const host = isLocal
+    ? process.env.INTERNAL_HOST || "localhost:3000"
+    : process.env.NEXT_PUBLIC_BASE_URL?.replace(/^https?:\/\//, "");
 
   const apiUrl = `${protocol}://${host}/api/log`;
 
   try {
+    // ✅ Send log with browser headers
     await fetch(apiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ip, url }),
+      headers: {
+        "Content-Type": "application/json",
+        "x-forwarded-for": ip,
+        "user-agent": userAgent,
+        referer: referrer,
+      },
+      body: JSON.stringify({ ip, url, referrer, userAgent }),
     });
   } catch (err) {
-    console.error("⚠️ Failed to send log:", err);
+    console.error("Failed to send log:", err);
   }
 
   return NextResponse.next();
