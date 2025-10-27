@@ -58,17 +58,27 @@ export default function HomePage() {
     setDarkMode(localStorage.getItem("darkMode") === "true");
 
     const controller = new AbortController();
-    const fetchVisitorCount = async () => {
+
+    const logVisit = async () => {
       try {
+        // Log the visit (the server determines IP)
+        await fetch("/api/log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: window.location.href }),
+          signal: controller.signal,
+        });
+
+        // Get visitor count
         const res = await fetch("/api/log", { signal: controller.signal });
-        if (!res.ok) throw new Error("Network response failed");
         const data = await res.json();
         setVisitorCount(data.count);
-      } catch {
-        console.warn("⚠️ Failed to load visitor count");
+      } catch (err) {
+        console.warn("⚠️ Visitor log failed:", err);
       }
     };
-    fetchVisitorCount();
+
+    logVisit();
     return () => controller.abort();
   }, []);
 

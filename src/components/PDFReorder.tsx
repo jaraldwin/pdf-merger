@@ -10,6 +10,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import SortableItem from "./SortableItem";
 import Image from "next/image";
+import * as pdfjsLib from "pdfjs-dist";
 
 interface PDFReorderProps {
   darkMode: boolean;
@@ -34,9 +35,7 @@ export default function PDFReorder({ darkMode }: PDFReorderProps) {
 
     (async () => {
       try {
-        const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
         pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
-
         const pdf = await pdfjsLib.getDocument(URL.createObjectURL(file))
           .promise;
 
@@ -180,7 +179,7 @@ export default function PDFReorder({ darkMode }: PDFReorderProps) {
         }`}
       >
         <label className="block mb-3 font-medium text-center">
-          Upload PDF to Reorder and Compress
+          Upload PDF to Reorder Pages and Compress
         </label>
         <input
           ref={fileInputRef}

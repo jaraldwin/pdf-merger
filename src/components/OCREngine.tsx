@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import { createWorker } from "tesseract.js";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-
+import * as pdfjsLib from "pdfjs-dist";
 interface OCREngineProps {
   darkMode: boolean;
 }
@@ -57,7 +57,6 @@ export default function OCREngine({ darkMode }: OCREngineProps) {
 
       if (isPDF) {
         // Dynamic import for pdfjs-dist
-        const pdfjsLib = await import("pdfjs-dist/build/pdf.mjs");
         pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
 
         const pdf = await pdfjsLib.getDocument({ data: base64 }).promise;
