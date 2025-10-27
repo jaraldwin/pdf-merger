@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
 
@@ -13,9 +15,13 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          // Isolation for WASM workers
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+          // ✅ Only enforce in production
+          ...(isProd
+            ? [
+                { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+                { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
+              ]
+            : []),
 
           // Allow inline PDFs and images inside iframe
           { key: "X-Content-Type-Options", value: "nosniff" },
