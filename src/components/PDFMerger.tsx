@@ -54,6 +54,7 @@ export default function PDFMerger({ darkMode }: PDFMergerProps) {
 
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
+      console.log("Merged PDF URL:", url);
       setMergedUrl(url);
 
       // Calculate compressed file size
